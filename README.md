@@ -1,5 +1,5 @@
 # cintel-05-cintel
-Module 5: Building Apps with Live Data &amp; Continuous Intelligence
+## Module 5: Building Apps with Live Data &amp; Continuous Intelligence
 
 In this module, we'll look at integrating live data streams and how "data in motion" is different from "data at rest". You'll see a lot of water analogies when working with modern analytics and data flows. Industry uses data lakes, data pipelines, data warehouses, and data lake houses. In this module, we'll introduce some of those terms, primarily so you can converse in the language of live data and look up information as needed.
 
