@@ -10,22 +10,8 @@ from shinywidgets import render_plotly
 from scipy import stats
 import folium
 
-# --------------------------------------------
-# Import icons as you like
-# --------------------------------------------
-# add favicons to your requirements.txt 
-# and install to active project virtual environment
-
+# Constants
 UPDATE_INTERVAL_SECS: int = 3
-
-# --------------------------------------------
-# Initialize a REACTIVE VALUE with a common data structure
-# The reactive value is used to store state (information)
-# Used by all the display components that show this live data.
-# This reactive value is a wrapper around a DEQUE of readings
-# --------------------------------------------
-
-DEQUE_SIZE: int = 5
 DEQUE_SIZE: int = 5
 
 # Initialize reactive value
@@ -43,18 +29,8 @@ def reactive_calc_combined():
     df = pd.DataFrame(deque_snapshot)
     return deque_snapshot, df, new_dictionary_entry
 
-# Define the Shiny UI Page layout
-# Call the ui.page_opts() function
-# Set title to a string in quotes that will appear at the top
-# Set fillable to True to use the whole page width for the UI
 # UI Definition
-
 ui.page_opts(title="PyShiny Express: Antarctic Explorer", fillable=True)
-
-
-# Sidebar is typically used for user interaction/information
-# Note the with statement to create the sidebar followed by a colon
-# Everything in the sidebar is indented consistently
 
 with ui.layout_sidebar():
     with ui.sidebar(open="open", width=300):
@@ -63,7 +39,7 @@ with ui.layout_sidebar():
         ui.hr()
         ui.h6("Links:")
         ui.a("GitHub Source", href="https://github.com/meevang/cintel-05-cintel", target="_blank")
-        ui.a("GitHub App", href="https://meevang.github.io/cintel-05-cintel/", target="_blank")
+        ui.a("GitHub App", href="https://github.com/meevang/cintel-05-cintel/blob/main/dashbaord/app.py", target="_blank")
         ui.a("PyShiny", href="https://shiny.posit.co/py/", target="_blank")
         ui.a("PyShiny Express", href="https://shiny.posit.co/blog/posts/shiny-express/", target="_blank")
 
@@ -119,7 +95,7 @@ with ui.layout_sidebar():
             @render.ui
             def render_map():
                 m = folium.Map(location=[-90, 0], zoom_start=3, 
-                               min_zoom=1, max_zoom=10,
+                               min_zoom=1, max_zoom=11,
                                tiles='CartoDB positron')
                 
                 folium.Marker(
