@@ -9,7 +9,7 @@ Once we have live data coming in, we need to want to create temporary storage to
 
 An example that includes storing the readings in a deque (of dictionaries) and wrapping that deque in a reactive value as a way to manage our constantly changing state.
 
-Your job is to:
+### Your job is to:
 
 implement the example provided and
 propose and implement an enhancement, extension, or variation on the app. 
@@ -22,7 +22,7 @@ Changing the subject domain from temperatures in Antarctica (so we can add it to
 Integrating live data and continuous intelligence into your own previous interactive app
 The goal is to understand the possibilities and challenges of working with live data and consider how you can analyze and present "data in motion" to enhance your analytics projects. 
 
-Customize your requirements.txt
+### Customize your requirements.txt
 PyShiny Playground already includes all the packages listed below. Please do not add these packages to a requirements.txt running in the Playground - but include them in your requirements.txt that you would use for local development. 
 
 faicons - for Font Awesome free Icons
@@ -34,7 +34,7 @@ shiny - used to build our web app in Python
 shinylive - used to build to our docs folder and host our app on GitHub Pages
 shinywidgets - a wrapper for complex widgets like plotly charts
 
-Implement the Continuous Intelligence App
+### Implement the Continuous Intelligence App
 Code is not written from the top down like a book. Code is written from the outside in. It is typically organized first - using comment blocks.
 
 Functions are "stubbed in" - returning a basic answer first while getting things connected together. Code is slowly added in, and once connected, we generally fine tune and finish implementing each function - adding error handling, and making sure all the possible special cases are covered (e.g. don't attempt to plot if the Data Frame is empty). 
