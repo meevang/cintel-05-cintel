@@ -1,120 +1,141 @@
-import plotly.express as px
-from shiny.express import input, ui, render
-from shinywidgets import render_plotly
-from palmerpenguins import load_penguins
+# Imports
+from shiny import reactive, render
+from shiny.express import ui
+import random
+from datetime import datetime
+from collections import deque
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from shiny import reactive
+import plotly.express as px
+from shinywidgets import render_plotly
+from scipy import stats
+import folium
 
-# Load penguins dataset
-penguins = load_penguins()
+# --------------------------------------------
+# Import icons as you like
+# --------------------------------------------
+# add favicons to your requirements.txt 
+# and install to active project virtual environment
 
-ui.page_opts(title="Mee's Layout", fillable=True)
+UPDATE_INTERVAL_SECS: int = 3
 
-# Create a single sidebar
-with ui.sidebar(open="open", bg="#f8f8f8"):
-    # Add a 2nd level header to the sidebar
-    ui.h2("Sidebar")
+# --------------------------------------------
+# Initialize a REACTIVE VALUE with a common data structure
+# The reactive value is used to store state (information)
+# Used by all the display components that show this live data.
+# This reactive value is a wrapper around a DEQUE of readings
+# --------------------------------------------
 
-    # Create a dropdown input to choose a column
-    ui.input_select(
-    "histogram_attribute",
-    label="Select attribute for Ploytly Histogram",
-    choices=["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"],
-    selected="body_mass_g"
-)
-    
-    ui.input_numeric("plotly_bin_count", "Input number for Plotly Histogram", min=0, max=30, value=0)
-    
-    ui.input_slider("seaborn_bin_count", "Bin Count for Seaborn Hisogram", min=0, max=20, value=10)
-    
-    ui.input_checkbox_group(
-        "selected_species_list",
-        "Species:", 
-        choices=["Adelie", "Gentoo", "Chinstrap"],
-        selected=["Adelie", "Gentoo", "Chinstrap"],
-        inline=True)
-    # Use ui.a() to add a hyperlink to the sidebar
-    ui.a("GitHub", href="https://github.com/meevang/cintel-02-data", target="_blank")
+DEQUE_SIZE: int = 5
+DEQUE_SIZE: int = 5
 
-    # Use ui.hr() to add a horizontal rule to the sidebar
-    ui.hr(style="border-top: 10px dashed #38761d;")
+# Initialize reactive value
+reactive_value_wrapper = reactive.value(deque(maxlen=DEQUE_SIZE))
 
+# Reactive calculation
+@reactive.calc()
+def reactive_calc_combined():
+    reactive.invalidate_later(UPDATE_INTERVAL_SECS)
+    temp = round(random.uniform(-40, -20), 1)  # More realistic Antarctic temperatures
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_dictionary_entry = {"temp": temp, "timestamp": timestamp}
+    reactive_value_wrapper.get().append(new_dictionary_entry)
+    deque_snapshot = reactive_value_wrapper.get()
+    df = pd.DataFrame(deque_snapshot)
+    return deque_snapshot, df, new_dictionary_entry
 
-with ui.layout_columns():
-    # First column: Data Table
-    with ui.card():
-        ui.card_header("Penguins Data Table")
-        @render.data_frame
-        def penguins_datatable():
-            return render.DataTable(data=filtered_data(), filters=False, height='400px')
-    
-    # Second column: Data Grid
-    with ui.card():
-        ui.card_header("Penguins Data Grid")
-        @render.data_frame
-        def penguins_datagrid():
-            return render.DataGrid(data=filtered_data(), filters=False, width='100%', height='400px')
+# Define the Shiny UI Page layout
+# Call the ui.page_opts() function
+# Set title to a string in quotes that will appear at the top
+# Set fillable to True to use the whole page width for the UI
+# UI Definition
+
+ui.page_opts(title="PyShiny Express: Antarctic Explorer", fillable=True)
 
 
-with ui.layout_columns():
+# Sidebar is typically used for user interaction/information
+# Note the with statement to create the sidebar followed by a colon
+# Everything in the sidebar is indented consistently
+
+with ui.layout_sidebar():
+    with ui.sidebar(open="open", width=300):
+        ui.h2("Antarctic Explorer", class_="text-center")
+        ui.p("Real-time temperature readings in Antarctica.", class_="text-center")
+        ui.hr()
+        ui.h6("Links:")
+        ui.a("GitHub Source", href="https://github.com/denisecase/cintel-05-cintel", target="_blank")
+        ui.a("GitHub App", href="https://denisecase.github.io/cintel-05-cintel/", target="_blank")
+        ui.a("PyShiny", href="https://shiny.posit.co/py/", target="_blank")
+        ui.a("PyShiny Express", href="https://shiny.posit.co/blog/posts/shiny-express/", target="_blank")
+
+    with ui.layout_columns(fill=True):
+        with ui.value_box(theme="bg-gradient-blue-purple", full_screen=True):
+            "Current Temperature"
+            @render.text
+            def display_temp():
+                _, _, latest_dictionary_entry = reactive_calc_combined()
+                return f"{latest_dictionary_entry['temp']} °C"
+
+        with ui.value_box(theme="bg-gradient-blue-purple", full_screen=True):
+            "Current Date and Time"
+            @render.text
+            def display_time():
+                _, _, latest_dictionary_entry = reactive_calc_combined()
+                return f"{latest_dictionary_entry['timestamp']}"
+
     with ui.card(full_screen=True):
-        ui.card_header("Plotly Histogram: Species")
-        
-        @render_plotly
-        def plotly_histogram():
-            filtered_df = penguins[penguins['species'].isin(input.selected_species_list())]
-            x_attr = input.histogram_attribute()
-    
-            return px.histogram(filtered_df, 
-                        x=x_attr,
-                        color="species", 
-                        title=f"Penguin {x_attr} by Species",
-                        labels={x_attr: x_attr, "count": "Count"},
-                        nbins=input.plotly_bin_count(),
-                        marginal="box")
-            
+        ui.card_header("Recent Temperature Readings")
+        @render.data_frame
+        def display_df():
+            _, df, _ = reactive_calc_combined()
+            pd.set_option('display.width', None)
+            return render.DataGrid(df, width="100%")
 
-    with ui.card(full_screen=True):
-        ui.card_header("Seaborn Histogram: Species")
-    
-        @render.plot
-        def seaborn_histogram():
-            filtered_df=penguins[penguins['species'].isin(input.selected_species_list())]
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.histplot(filtered_df, x="body_mass_g", hue="species", multiple="stack", ax=ax, bins=input.seaborn_bin_count())
-            ax.set_title("Penguin Body Mass by Species")
-            ax.set_xlabel("Body Mass (g)")
-            ax.set_ylabel("Count")
-            return fig
+    with ui.layout_columns(fill=True):
+        with ui.card(full_screen=True):
+            ui.card_header("Temperature Trend")
+            @render_plotly
+            def display_plot():
+                _, df, _ = reactive_calc_combined()
+                if not df.empty:
+                    df["timestamp"] = pd.to_datetime(df["timestamp"])
+                    fig = px.scatter(df,
+                        x="timestamp",
+                        y="temp",
+                        title="Temperature Readings with Trend Line",
+                        labels={"temp": "Temperature (°C)", "timestamp": "Time"},
+                        color_discrete_sequence=["blue"])
+                    
+                    x_vals = range(len(df))
+                    y_vals = df["temp"]
+                    slope, intercept, _, _, _ = stats.linregress(x_vals, y_vals)
+                    df['trend_line'] = [slope * x + intercept for x in x_vals]
+                    fig.add_scatter(x=df["timestamp"], y=df['trend_line'], mode='lines', name='Trend Line')
+                    fig.update_layout(xaxis_title="Time", yaxis_title="Temperature (°C)")
+                    return fig
+                return px.scatter()
 
-with ui.card(full_screen=True):
-    ui.card_header("Plotly Scatterplot: Penguin Flipper & Bill Length")
-
-    @render_plotly
-    def plotly_scatterplot():
-        filtered_df=penguins[penguins['species'].isin(input.selected_species_list())]
-        fig = px.scatter(filtered_df, 
-                     x="flipper_length_mm", 
-                     y="bill_length_mm", 
-                     color="species",
-                     labels={"flipper_length_mm": "Flipper Length (mm)",
-                             "bill_length_mm": "Bill Length (mm)",
-                             "species": "Species"})
-        return fig
-
-
-# --------------------------------------------------------
-# Reactive calculations and effects
-# --------------------------------------------------------
-
-# Add a reactive calculation to filter the data
-# By decorating the function with @reactive, we can use the function to filter the data
-# The function will be called whenever an input functions used to generate that output changes.
-# Any output that depends on the reactive function (e.g., filtered_data()) will be updated when the data changes.
-
-@reactive.calc
-def filtered_data():
-    selected_species = input.selected_species_list()
-    return penguins[penguins["species"].isin(selected_species)]
+        with ui.card(full_screen=True):
+            ui.card_header("McMurdo Station Location")
+            @render.ui
+            def render_map():
+                m = folium.Map(location=[-90, 0], zoom_start=3, 
+                               min_zoom=1, max_zoom=10,
+                               tiles='CartoDB positron')
+                
+                folium.Marker(
+                    [-77.85, 166.67],  # McMurdo Station coordinates
+                    popup="McMurdo Station",
+                    tooltip="Temperature Sensor Location"
+                ).add_to(m)
+                
+                folium.Circle(
+                    [-77.85, 166.67],
+                    radius=50000,  # 50 km radius
+                    color="red",
+                    fill=True,
+                    fillColor="red"
+                ).add_to(m)
+                
+                m.fit_bounds([[-90, -180], [-60, 180]])
+                
+                return ui.HTML(m._repr_html_())
